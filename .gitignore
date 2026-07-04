@@ -1,15 +1,72 @@
-# Local Database Files
+# ==========================================
+# 🗄️ LOCAL DATABASES & PERSISTENCE STACKS
+# ==========================================
 Backend/data/
 data/
 *.db
 *.db-journal
+*.db-wal
+*.sqlite3
 
-# User Uploaded Documents
+# ==========================================
+# 📂 USER FILE UPLOADS & FILE CACHES
+# ==========================================
 Backend/uploads/
 uploads/
 
-# System & Cache Files
-__pycache__/
+# ==========================================
+# 🤫 ENVIRONMENTS, CREDS & SECRETS (CRITICAL)
+# ==========================================
 .env
+.env.local
+.env.*.local
+*.env
+secrets.json
+
+# ==========================================
+# 🐍 PYTHON RUNTIMES, BUILDS & PIPELINES
+# ==========================================
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# Virtual Environments
+.venv/
+venv/
+ENV/
+env/
+
+# ==========================================
+# 🐋 DOCKER RUNTIMES & LOCAL VOLUMES
+# ==========================================
+.docker/
+proxy_data/
+letsencrypt/
+
+# ==========================================
+# 💻 EDITOR & IDE PROFILES (VS Code, PyCharm)
+# ==========================================
+.vscode/
+.cursor/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+
+# ==========================================
+# 🖥️ SYSTEM REUSE OVERSIGHTS (OS Trash)
+# ==========================================
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
 Thumbs.db
+ehthumbs.db
