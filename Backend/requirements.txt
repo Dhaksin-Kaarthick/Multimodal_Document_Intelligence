@@ -1,0 +1,14 @@
+fastapi
+uvicorn
+python-multipart
+pymupdf
+pdfplumber
+pandas
+openpyxl
+sentence-transformers
+langchain-text-splitters
+qdrant-client
+httpx
+requests
+pyjwt
+sqlalchemy

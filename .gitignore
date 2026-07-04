@@ -1,0 +1,15 @@
+# Local Database Files
+Backend/data/
+data/
+*.db
+*.db-journal
+
+# User Uploaded Documents
+Backend/uploads/
+uploads/
+
+# System & Cache Files
+__pycache__/
+.env
+.DS_Store
+Thumbs.db

@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./Backend
+      dockerfile: Dockerfile
+    container_name: doc_intelligence_backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./Backend/uploads:/app/uploads
+      - backend_data_vol:/app/data
+    environment:
+      - PYTHONUNBUFFERED=1
+      # FIXED: Directs container queries out to the host network address interface
+      - OLLAMA_HOST=http://host.docker.internal:11434
+    extra_hosts:
+      - "host.docker.internal:host-gateway" # Resolves connection paths on Windows/Linux engines
+    restart: unless-stopped
+
+  frontend:
+    image: nginx:alpine
+    container_name: doc_intelligence_frontend
+    ports:
+      - "3000:80"
+    volumes:
+      - ./Frontend:/usr/share/nginx/html
+    command: /bin/sh -c "sed -i 's/index  index.html index.htm;/index  login.html index.html;/' /etc/nginx/conf.d/default.conf && exec nginx -g 'daemon off;'"
+    restart: unless-stopped
+
+volumes:
+  backend_data_vol: {}
