@@ -13,10 +13,11 @@ services:
       - backend_data_vol:/app/data
     environment:
       - PYTHONUNBUFFERED=1
-      # FIXED: Directs container queries out to the host network address interface
       - OLLAMA_HOST=http://host.docker.internal:11434
+      # ADD THIS LINE: Pass the hidden host key securely into the Docker backend container env
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY} 
     extra_hosts:
-      - "host.docker.internal:host-gateway" # Resolves connection paths on Windows/Linux engines
+      - "host.docker.internal:host-gateway"
     restart: unless-stopped
 
   frontend:

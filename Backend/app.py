@@ -26,8 +26,11 @@ from services.vision_processor import process_pdf_images, process_standalone_ima
 from services.pdf_parser import extract_text_from_pdf
 from services.table_extractor import extract_tables_from_pdf
 
-OLLAMA_URL = os.getenv(
-    "OLLAMA_HOST", "http://localhost:11434") + "/api/generate"
+# --- OPENROUTER API HUB CONFIGURATION ---
+OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
+# Safely reads your secret token directly from the Docker container environment variables
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
+
 UPLOAD_DIR = "uploads"
 
 if not os.path.exists(UPLOAD_DIR):
@@ -304,7 +307,6 @@ async def ask_question(payload: QuestionRequest, user_id: str = Depends(get_curr
                 unique_sources.append({"page": page_num, "text": c["content"]})
                 seen_pages.add(page_num)
 
-        # FIXED: Extracted formatting logic from the f-string loop to avoid syntax failure variations under Python 3.11
         joined_context_string = '\n\n'.join(context_parts)
 
         prompt = (
@@ -314,13 +316,29 @@ async def ask_question(payload: QuestionRequest, user_id: str = Depends(get_curr
             f"Question: {payload.question}\n"
             f"Answer:"
         )
+
+        # Build secure header payload using the environment-loaded key variable
+        headers = {
+            "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+            "Content-Type": "application/json"
+        }
+
+        request_body = {
+            "model": "openrouter/auto",
+            "messages": [
+                {"role": "user", "content": prompt}
+            ]
+        }
+
         async with httpx.AsyncClient(timeout=60.0) as client:
-            response = await client.post(OLLAMA_URL, json={"model": "gemma3:4b", "prompt": prompt, "stream": False})
+            response = await client.post(OPENROUTER_URL, headers=headers, json=request_body)
             if response.status_code != 200:
                 raise Exception(
-                    f"Ollama local service failure: {response.status_code}")
-            answer = response.json().get(
-                "response", "Could not generate answer mapping structures.")
+                    f"OpenRouter service connection failed: {response.text}")
+
+            data = response.json()
+            answer = data["choices"][0]["message"]["content"]
+
         return {"answer": answer, "sources": sorted(unique_sources, key=lambda x: x["page"])}
     except Exception as e:
         raise HTTPException(
@@ -344,6 +362,7 @@ async def summarize_document(document_id: str, user_id: str = Depends(get_curren
             x.payload.get("chunk_id", 0)))
         full_text_context = "\n".join(
             [p.payload["content"] for p in sorted_points])
+
         prompt = (
             "<start_of_turn>user\n"
             "You are an expert document analyzer. Provide a highly concise, 3-bullet-point executive summary "
@@ -353,14 +372,27 @@ async def summarize_document(document_id: str, user_id: str = Depends(get_curren
             "<end_of_turn>\n"
             "<start_of_turn>model\n"
         )
+
+        headers = {
+            "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+            "Content-Type": "application/json"
+        }
+        request_body = {
+            "model": "openrouter/auto",
+            "messages": [
+                {"role": "user", "content": prompt}
+            ]
+        }
+
         async with httpx.AsyncClient(timeout=120.0) as client:
-            response = await client.post(OLLAMA_URL, json={"model": "gemma3:4b", "prompt": prompt, "stream": False, "options": {"temperature": 0.2}})
+            response = await client.post(OPENROUTER_URL, headers=headers, json=request_body)
             if response.status_code != 200:
                 raise Exception(
-                    f"Ollama context block generated truncation anomaly fault: {response.status_code}")
-            summary_response = response.json().get("response", "").strip()
-            if summary_response.lower() in ["okay", "okay.", "ok", "ok."]:
-                summary_response = "💡 The local model encountered an attention timeout on the full text block."
+                    f"OpenRouter summarization fault: {response.text}")
+
+            data = response.json()
+            summary_response = data["choices"][0]["message"]["content"].strip()
+
         return {"summary": summary_response}
     except Exception as e:
         raise HTTPException(

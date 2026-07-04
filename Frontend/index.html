@@ -677,7 +677,7 @@
             <span
               class="text-[10px] font-mono bg-gray-100 dark:bg-slate-800 px-2 py-0.5 rounded border border-gray-300 dark:border-indigo-700/40"
               style="color: var(--text-muted)"
-              >Gemma3:4b</span
+              >OpenRouter:Auto</span
             >
           </div>
 
@@ -1355,12 +1355,11 @@
       async function executeUserChatQuery() {
         const textarea = document.getElementById("chat-textarea");
         const scrollFrame = document.getElementById("chat-scroll-frame");
-        let activeTokenValue =
-          sessionToken || localStorage.getItem("mdi_jwt_token");
         const queryText = textarea.value.trim();
 
         if (!queryText || !activeDocumentId) return;
 
+        // Render User Message
         scrollFrame.innerHTML += `<div class="flex justify-end w-full fade-in-layout"><div class="text-white bg-gradient-to-r from-[#4F46E5] to-[#9333EA] rounded-2xl px-4 py-2.5 max-w-[85%] font-medium shadow-sm">${queryText}</div></div>`;
         textarea.value = "";
         scrollFrame.scrollTop = scrollFrame.scrollHeight;
@@ -1368,9 +1367,12 @@
         document.getElementById("stat-queries").textContent = queryCount;
 
         const loaderId = "loader-" + Date.now();
-        scrollFrame.innerHTML += `<div class="flex justify-start w-full fade-in-layout" id="${loaderId}"><div class="bg-[var(--chat-ai-bg)] border border-[var(--border-glow)] rounded-2xl px-4 py-2.5 text-[11px] flex items-center gap-2 font-mono" style="color: var(--text-primary);"><svg class="animate-spin h-3 w-3" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>Gemma3 checking vectors...</div></div>`;
+        scrollFrame.innerHTML += `<div class="flex justify-start w-full fade-in-layout" id="${loaderId}"><div class="bg-[var(--chat-ai-bg)] border border-[var(--border-glow)] rounded-2xl px-4 py-2.5 text-[11px] flex items-center gap-2 font-mono" style="color: var(--text-primary);"><svg class="animate-spin h-3 w-3" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>Cloud Router analyzing context...</div></div>`;
         scrollFrame.scrollTop = scrollFrame.scrollHeight;
         const startTime = Date.now();
+
+        let activeTokenValue =
+          sessionToken || localStorage.getItem("mdi_jwt_token");
 
         try {
           const response = await fetch(`${backendBaseUrl}/ask`, {
@@ -1390,26 +1392,33 @@
             `${Date.now() - startTime}ms`;
 
           let sourceButtons = "";
+
+          // FIXED: Only render jump-to-page keys if the context contains valid facts (not missing flags)
+          const isMissing =
+            data.answer.toLowerCase().includes("fields are missing") ||
+            data.answer.toLowerCase().includes("does not contain information");
+
           if (
+            !isMissing &&
             activeFilename.split(".").pop().toLowerCase() === "pdf" &&
             data.sources &&
             data.sources.length > 0
           ) {
             sourceButtons = `
-              <div class="mt-3 pt-2.5 border-t border-slate-200/10 flex flex-col gap-1.5">
-                <div class="flex flex-wrap gap-2">
-                  ${data.sources
-                    .map(
-                      (s) => `
-                    <button onclick="jumpToPdfPageHash(${s.page})" title="Jump to Page ${s.page}" class="inline-flex items-center gap-1.5 bg-white text-indigo-600 font-bold px-4 py-1.5 rounded-full text-[11px] border border-slate-200 hover:bg-slate-50 transition cursor-pointer shadow-sm">
-                      <svg class="h-3 w-3 text-[#E11D48] fill-current" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13_c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
-                      <span>Jump to Page ${s.page}</span>
-                    </button>
-                  `,
-                    )
-                    .join("")}
-                </div>
-              </div>`;
+        <div class="mt-3 pt-2.5 border-t border-slate-200/10 flex flex-col gap-1.5">
+          <div class="flex flex-wrap gap-2">
+            ${data.sources
+              .map(
+                (s) => `
+              <button onclick="jumpToPdfPageHash(${s.page})" title="Jump to Page ${s.page}" class="inline-flex items-center gap-1.5 bg-white text-indigo-600 font-bold px-4 py-1.5 rounded-full text-[11px] border border-slate-200 hover:bg-slate-50 transition cursor-pointer shadow-sm">
+                <svg class="h-3 w-3 text-[#E11D48] fill-current" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13_c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+                <span>Jump to Page ${s.page}</span>
+              </button>
+            `,
+              )
+              .join("")}
+          </div>
+        </div>`;
           }
 
           scrollFrame.innerHTML += `<div class="flex justify-start w-full flex-col space-y-2 fade-in-layout"><div class="ai-msg-bubble border p-4 max-w-[95%] shadow-sm relative rounded-2xl" style="background-color: var(--chat-ai-bg); border-color: var(--border-glow); color: var(--text-primary);"><p class="leading-relaxed font-normal">${data.answer}</p>${sourceButtons}</div></div>`;
