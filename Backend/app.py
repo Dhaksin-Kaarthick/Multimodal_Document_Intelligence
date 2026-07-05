@@ -21,18 +21,17 @@ from sqlalchemy.orm import sessionmaker
 # Import local pipeline modules
 from services.vector_store import initialize_vector_db, upsert_chunks_to_db, search_filtered_chunks
 from services.chunker import chunk_document_pages
-from services.embedder import generate_embeddings_for_chunks, model
+# Changed to handle cloud API
+from services.embedder import generate_embeddings_for_chunks
 from services.vision_processor import process_pdf_images, process_standalone_image
 from services.pdf_parser import extract_text_from_pdf
 from services.table_extractor import extract_tables_from_pdf
 
 # --- OPENROUTER API HUB CONFIGURATION ---
 OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
-# Safely reads your secret token directly from the Docker container environment variables
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 
 UPLOAD_DIR = "uploads"
-
 if not os.path.exists(UPLOAD_DIR):
     os.makedirs(UPLOAD_DIR)
 
@@ -77,6 +76,28 @@ class ChatSessionModel(BaseModel):
     query_count: int
     chat_html: str
     summary_html: str
+
+
+async def get_text_embedding_via_api(text: str) -> list:
+    """Fetches text embeddings from OpenRouter to run smoothly inside 512MB RAM."""
+    if not OPENROUTER_API_KEY:
+        raise Exception(
+            "OPENROUTER_API_KEY is missing from environment variables.")
+
+    headers = {
+        "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+        "Content-Type": "application/json"
+    }
+    body = {
+        "model": "baai/bge-m3",
+        "input": text
+    }
+    async with httpx.AsyncClient(timeout=15.0) as client:
+        response = await client.post("https://openrouter.ai/api/v1/embeddings", headers=headers, json=body)
+        if response.status_code == 200:
+            return response.json()["data"][0]["embedding"]
+        else:
+            raise Exception(f"Embedding API failed: {response.text}")
 
 # --- PASSWORD DRIVERS ---
 
@@ -211,8 +232,7 @@ async def delete_chat_session_state(document_id: str, user_id: str = Depends(get
 # --- RAG PIPELINE ENGINE MONITOR WORKER ---
 
 
-# FIND THIS BLOCK IN Backend/app.py:
-def heavy_rag_ingestion_pipeline(file_path: str, file_extension: str, document_id: str, user_id: str, file_content: bytes = None):
+async def heavy_rag_ingestion_pipeline(file_path: str, file_extension: str, document_id: str, user_id: str, file_content: bytes = None):
     processing_status[document_id] = "processing"
     print(
         f"\n🚀 [START] Processing pipeline initialized for Doc ID: {document_id}")
@@ -222,7 +242,6 @@ def heavy_rag_ingestion_pipeline(file_path: str, file_extension: str, document_i
             if file_content:
                 image_description = process_standalone_image(file_content)
                 if image_description:
-                    # FIXED: Changed "content" back to "text" to match your chunker service schema requirements
                     combined_context.append(
                         {"page": 1, "text": f"[Image Analysis]\nDescription: {image_description}"})
         else:
@@ -233,7 +252,8 @@ def heavy_rag_ingestion_pipeline(file_path: str, file_extension: str, document_i
 
         if combined_context:
             document_chunks = chunk_document_pages(combined_context)
-            embedded_chunks = generate_embeddings_for_chunks(document_chunks)
+            # FIXED: Added await here because our updated embedder function uses async network calls
+            embedded_chunks = await generate_embeddings_for_chunks(document_chunks)
             for chunk in embedded_chunks:
                 chunk["user_id"] = user_id
             upsert_chunks_to_db(qdrant_db, document_id, embedded_chunks)
@@ -289,7 +309,7 @@ async def ask_question(payload: QuestionRequest, user_id: str = Depends(get_curr
         raise HTTPException(
             status_code=503, detail="Database cluster link context is inactive.")
     try:
-        query_vector = model.encode(payload.question).tolist()
+        query_vector = await get_text_embedding_via_api(payload.question)
         relevant_chunks = search_filtered_chunks(
             client=qdrant_db, query_vector=query_vector, document_id=payload.document_id, top_k=3)
         if not relevant_chunks:
@@ -317,7 +337,6 @@ async def ask_question(payload: QuestionRequest, user_id: str = Depends(get_curr
             f"Answer:"
         )
 
-        # Build secure header payload using the environment-loaded key variable
         headers = {
             "Authorization": f"Bearer {OPENROUTER_API_KEY}",
             "Content-Type": "application/json"
