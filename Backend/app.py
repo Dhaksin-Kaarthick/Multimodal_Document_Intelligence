@@ -160,6 +160,15 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
+
+@app.get("/")
+async def root_health_check():
+    return {
+        "status": "healthy",
+        "service": "Multimodal Document Intelligence Platform API Core",
+        "datetime": datetime.datetime.now().isoformat()
+    }
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
