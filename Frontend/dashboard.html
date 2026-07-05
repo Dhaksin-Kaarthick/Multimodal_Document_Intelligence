@@ -1,0 +1,1543 @@
+<!doctype html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Doc Intelligence Platform — Enterprise Multimodal AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: "class",
+      };
+    </script>
+    <style>
+      /* --- PREMIUM 2026 SOFT UI COLOR DESIGN VARIATIONS --- */
+      html.dark {
+        --bg-main: #0b1020;
+        --bg-secondary: #121826;
+        --bg-card: #1b2235;
+        --text-primary: #ffffff;
+        --text-secondary: #94a3b8;
+        --text-muted: #64748b;
+        --border-glow: rgba(59, 130, 246, 0.15);
+        --nm-shadow-flat: 6px 6px 16px #05070e, -6px -6px 16px #111932;
+        --nm-shadow-inset:
+          inset 4px 4px 10px #05070e, inset -4px -4px 10px #111932;
+        --input-border: rgba(255, 255, 255, 0.05);
+        --chat-ai-bg: #121826;
+        --history-active: rgba(59, 130, 246, 0.1);
+        --history-text: #3b82f6;
+        --history-border: rgba(59, 130, 246, 0.2);
+        --dropdown-bg: #121826;
+        --dropdown-hover: #1b2235;
+        --dropdown-border: rgba(255, 255, 255, 0.1);
+      }
+
+      html.light {
+        --bg-main: #f6f8fc;
+        --bg-secondary: #ffffff;
+        --bg-card: #ffffff;
+        --text-primary: #111827;
+        --text-secondary: #4b5563;
+        --text-muted: #6b7280;
+        --border-glow: #e7ecf3;
+        --nm-shadow-flat: 0 8px 30px rgba(15, 23, 42, 0.06);
+        --nm-shadow-inset:
+          inset 2px 2px 6px rgba(15, 23, 42, 0.04),
+          inset -2px -2px 6px rgba(255, 255, 255, 0.8);
+        --input-border: #d9e2ec;
+        --chat-ai-bg: #f8fafc;
+        --history-active: #eef2ff;
+        --history-text: #4f46e5;
+        --history-border: #d9e2ec;
+        --dropdown-bg: #ffffff;
+        --dropdown-hover: #f1f5f9;
+        --dropdown-border: #e2e8f0;
+      }
+
+      body {
+        background-color: var(--bg-main);
+        color: var(--text-primary);
+        transition:
+          background-color 0.3s ease,
+          color 0.3s ease;
+      }
+      .nm-card {
+        background-color: var(--bg-card);
+        box-shadow: var(--nm-shadow-flat);
+        border: 1px solid var(--border-glow);
+        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+      }
+      .nm-inset {
+        background-color: var(--bg-main);
+        border: 1px solid var(--input-border);
+        box-shadow: var(--nm-shadow-inset);
+        transition: all 0.3s ease;
+      }
+      .nm-btn {
+        background-color: var(--bg-card);
+        box-shadow: var(--nm-shadow-flat);
+        border: 1px solid var(--border-glow);
+        color: var(--text-primary);
+        transition: all 0.2s ease-in-out;
+      }
+      .nm-btn:active {
+        transform: scale(0.97);
+      }
+      .fade-in-layout {
+        animation: fadeIn 0.4s ease-out forwards;
+      }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(2px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+      }
+      ::-webkit-scrollbar-track {
+        background: var(--bg-main);
+      }
+      ::-webkit-scrollbar-thumb {
+        background: var(--text-muted);
+        border-radius: 20px;
+      }
+    </style>
+  </head>
+  <body
+    class="h-screen flex flex-col overflow-hidden"
+    onclick="closeAllActionMenus()"
+  >
+    <div
+      id="backdrop-rename-portal"
+      style="display: none"
+      class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 items-center justify-center p-4"
+      onclick="closeRenameModalDialog()"
+    >
+      <div
+        class="nm-card w-full max-w-sm p-5 rounded-2xl space-y-4"
+        onclick="event.stopPropagation()"
+      >
+        <div class="flex items-center gap-2 border-b border-slate-800/40 pb-2">
+          <svg
+            class="h-4 w-4 text-[#F59E0B]"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125"
+            />
+          </svg>
+          <span class="text-xs font-bold">Rename Context Thread</span>
+        </div>
+        <div class="nm-inset rounded-xl px-3 py-2">
+          <input
+            type="text"
+            id="modal-input-rename"
+            class="bg-transparent w-full text-xs text-slate-200 focus:outline-none"
+            onkeydown="
+              if (event.key === 'Enter') commitThreadRenameFromModal();
+            "
+          />
+        </div>
+        <div class="flex justify-end gap-2 text-[11px] font-semibold pt-1">
+          <button
+            onclick="closeRenameModalDialog()"
+            class="px-3 py-1.5 rounded-lg text-slate-400 hover:bg-slate-800/30 bg-transparent border-none cursor-pointer"
+          >
+            Cancel
+          </button>
+          <button
+            onclick="commitThreadRenameFromModal()"
+            class="px-4 py-1.5 rounded-lg bg-indigo-600 text-white border-none cursor-pointer hover:brightness-105 transition"
+          >
+            Save
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div
+      id="backdrop-delete-portal"
+      style="display: none"
+      class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 items-center justify-center p-4"
+      onclick="closeDeleteModalDialog()"
+    >
+      <div
+        class="nm-card w-full max-w-sm p-5 rounded-2xl space-y-4"
+        onclick="event.stopPropagation()"
+      >
+        <div class="flex items-center gap-2 border-b border-slate-800/40 pb-2">
+          <svg
+            class="h-4 w-4 text-[#EF4444]"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.816 0L4.978 15.342Z"
+            />
+          </svg>
+          <span class="text-xs font-bold text-slate-200"
+            >Confirm Deletion Loop</span
+          >
+        </div>
+        <p class="text-[11px] text-slate-400 leading-relaxed">
+          Are you sure you want to permanently purge this session dataset? This
+          action is irreversible across cluster indices.
+        </p>
+        <div class="flex justify-end gap-2 pt-1 text-[11px] font-semibold">
+          <button
+            onclick="closeDeleteModalDialog()"
+            class="nm-btn px-3 py-1.5 rounded-lg text-slate-400 cursor-pointer bg-transparent border-none"
+          >
+            Cancel
+          </button>
+          <button
+            onclick="commitSessionPurgeFromDatabase()"
+            class="bg-[#EF4444] text-white px-4 py-1.5 rounded-lg hover:bg-red-500 transition border-none cursor-pointer"
+          >
+            Delete
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div id="app-workspace" class="hidden flex flex-col h-full w-full">
+      <header
+        style="background-color: var(--bg-secondary)"
+        class="h-16 px-6 border-b border-gray-200 dark:border-slate-800/40 flex justify-between items-center flex-shrink-0 z-50"
+      >
+        <div class="flex items-center gap-3 w-64">
+          <div
+            class="h-9 w-9 bg-gradient-to-r from-[#4F46E5] to-[#9333EA] rounded-xl flex items-center justify-center font-black text-white text-sm tracking-wider shadow-sm"
+          >
+            DI
+          </div>
+          <span
+            class="text-xs font-bold tracking-widest uppercase bg-gradient-to-r from-[#4F46E5] to-[#9333EA] bg-clip-text text-transparent"
+            >Doc Intelligence</span
+          >
+        </div>
+
+        <div class="flex items-center gap-4 w-64 justify-end">
+          <span
+            id="active-user-display-tag"
+            class="text-xs font-bold font-mono tracking-wide hidden mr-2"
+            style="color: var(--text-secondary)"
+            >@user</span
+          >
+          <button
+            onclick="executePlatformSignout()"
+            title="Sign Out"
+            class="border border-gray-300 dark:border-slate-800 rounded-lg p-2 transition cursor-pointer flex items-center justify-center bg-transparent"
+            style="color: var(--text-secondary)"
+          >
+            <svg
+              class="h-4 w-4"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75"
+              />
+            </svg>
+          </button>
+          <button
+            onclick="toggleGlobalTheme()"
+            class="nm-card w-14 h-7 rounded-full p-1 flex items-center relative cursor-pointer border-[#E5E7EB] dark:border-slate-800/40"
+          >
+            <div
+              id="theme-knob"
+              class="bg-gradient-to-r from-[#7C3AED] to-[#9333EA] h-5 w-5 rounded-full shadow-sm transform transition-all duration-300 ease-in-out flex items-center justify-center text-xs"
+            >
+              <span id="theme-icon-label">🌙</span>
+            </div>
+          </button>
+        </div>
+      </header>
+
+      <div class="flex flex-1 overflow-hidden w-full relative">
+        <aside
+          style="background-color: var(--bg-secondary)"
+          class="w-64 h-full flex flex-col justify-between p-4 border-r border-gray-200 dark:border-slate-800/30 flex-shrink-0 overflow-hidden"
+        >
+          <div class="space-y-5 h-full flex flex-col overflow-hidden">
+            <div class="flex justify-center w-full">
+              <button
+                onclick="document.getElementById('file-picker').click()"
+                title="Ingest Document Source"
+                class="h-12 w-12 rounded-xl bg-gradient-to-r from-[#4F46E5] to-[#9333EA] text-white flex items-center justify-center shadow-md hover:brightness-105 transition cursor-pointer border-none flex-shrink-0"
+              >
+                <svg
+                  class="h-5 w-5"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.5"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M12 4.5v15m7.5-7.5h-15"
+                  />
+                </svg>
+              </button>
+            </div>
+            <input
+              type="file"
+              id="file-picker"
+              accept=".pdf,.jpg,.jpeg,.png"
+              class="hidden"
+              onchange="uploadToBackend()"
+            />
+
+            <div class="flex-1 flex flex-col overflow-hidden min-h-0">
+              <span
+                class="text-[10px] font-bold text-gray-500 tracking-wider uppercase pl-2 block mb-2 flex-shrink-0"
+                style="color: var(--text-muted)"
+                >Recent Chats History</span
+              >
+              <div
+                class="flex-1 overflow-y-auto space-y-4 pr-1 text-xs"
+                id="history-ledger-scroll-zone"
+              >
+                <div class="space-y-1.5">
+                  <span
+                    class="text-[9px] font-semibold pl-2 block opacity-60"
+                    style="color: var(--text-muted)"
+                    >Session Index</span
+                  >
+                  <div id="today-chats-list" class="space-y-1 relative">
+                    <div
+                      id="empty-history-label"
+                      class="text-[11px] italic pl-2 py-1"
+                      style="color: var(--text-muted)"
+                    >
+                      No active conversation logs
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </aside>
+
+        <main class="flex-1 h-full flex flex-col p-6 overflow-y-auto space-y-6">
+          <section class="grid grid-cols-4 gap-4 flex-shrink-0">
+            <div class="nm-card p-4 rounded-2xl flex flex-col">
+              <span
+                class="text-[10px] font-bold uppercase"
+                style="color: var(--text-muted)"
+                >Active Chunks</span
+              >
+              <span
+                class="text-xl font-black mt-1 text-blue-500"
+                id="stat-chunks"
+                >0</span
+              >
+            </div>
+            <div class="nm-card p-4 rounded-2xl flex flex-col">
+              <span
+                class="text-[10px] font-bold uppercase"
+                style="color: var(--text-muted)"
+                >Session Queries</span
+              >
+              <span
+                class="text-xl font-black mt-1 text-purple-500"
+                id="stat-queries"
+                >0</span
+              >
+            </div>
+            <div class="nm-card p-4 rounded-2xl flex flex-col">
+              <span
+                class="text-[10px] font-bold uppercase"
+                style="color: var(--text-muted)"
+                >Inference RTT</span
+              >
+              <span
+                class="text-xl font-black mt-1 text-emerald-500"
+                id="stat-speed"
+                >0ms</span
+              >
+            </div>
+            <div class="nm-card p-4 rounded-2xl flex flex-col">
+              <span
+                class="text-[10px] font-bold uppercase"
+                style="color: var(--text-muted)"
+                >Target Document ID</span
+              >
+              <span
+                class="text-xs font-mono mt-2 truncate"
+                id="stat-doc-id"
+                style="color: var(--text-secondary)"
+                >None Loaded</span
+              >
+            </div>
+          </section>
+
+          <section
+            id="workspace-layout-grid"
+            class="flex-1 grid grid-cols-2 gap-6 min-h-[500px]"
+          >
+            <div
+              id="viewer-split-column-container"
+              class="nm-card rounded-2xl flex flex-col overflow-hidden relative border border-gray-200 dark:border-slate-800/30"
+            >
+              <div
+                id="pdf-view-placeholder"
+                class="absolute inset-0 flex flex-col items-center justify-center bg-white dark:bg-[#0B1020] p-8 text-center space-y-2 z-20"
+              >
+                <svg
+                  class="h-8 w-8 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z"
+                  />
+                </svg>
+                <p class="font-semibold text-xs mt-2">
+                  Document View Panel Idle
+                </p>
+                <p class="text-[11px]" style="color: var(--text-secondary)">
+                  Ingest a file asset to activate the visualization layer.
+                </p>
+              </div>
+
+              <div
+                class="h-12 border-b border-gray-200 dark:border-slate-800/50 px-4 flex justify-between items-center flex-shrink-0 text-xs"
+              >
+                <div class="flex items-center gap-2 font-medium">
+                  <span
+                    id="viewer-type-badge"
+                    class="font-bold text-[10px] px-1.5 py-0.5 rounded"
+                    >VIEWER</span
+                  >
+                  <span
+                    id="active-filename-view"
+                    class="font-semibold max-w-[200px] truncate"
+                    style="color: var(--text-primary)"
+                    >No Active Source Asset</span
+                  >
+                </div>
+              </div>
+
+              <div
+                class="flex-1 bg-slate-950 relative overflow-hidden h-full w-full flex items-center justify-center"
+              >
+                <iframe
+                  id="pdf-viewer"
+                  class="w-full h-full hidden border-none"
+                  src=""
+                ></iframe>
+
+                <div
+                  id="image-viewer-container"
+                  class="w-full h-full hidden absolute inset-0 flex items-center justify-center cursor-grab active:cursor-grabbing overflow-hidden"
+                  onmousedown="startImagePanDrag(event)"
+                >
+                  <div
+                    class="absolute bottom-4 left-1/2 -translate-x-1/2 z-30 flex items-center gap-1 bg-white/90 dark:bg-slate-900/90 border p-1.5 rounded-full shadow-lg"
+                    onmousedown="event.stopPropagation()"
+                  >
+                    <button
+                      onclick="adjustImageZoom(0.1)"
+                      title="Zoom In"
+                      class="nm-btn h-8 w-8 flex items-center justify-center rounded-full text-xs font-bold cursor-pointer"
+                    >
+                      <svg
+                        class="h-3 w-3"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2.5"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          d="M12 4.5v15m7.5-7.5h-15"
+                        />
+                      </svg>
+                    </button>
+                    <button
+                      onclick="adjustImageZoom(-0.1)"
+                      title="Zoom Out"
+                      class="nm-btn h-8 w-8 flex items-center justify-center rounded-full text-xs font-bold cursor-pointer"
+                    >
+                      <svg
+                        class="h-3 w-3"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2.5"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          d="M19.5 12h-15"
+                        />
+                      </svg>
+                    </button>
+                    <button
+                      onclick="rotateImage()"
+                      title="Rotate"
+                      class="nm-btn h-8 w-8 flex items-center justify-center rounded-full text-xs font-bold cursor-pointer"
+                    >
+                      <svg
+                        class="h-3 w-3"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2.5"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"
+                        />
+                      </svg>
+                    </button>
+                    <button
+                      onclick="resetImageTransformation()"
+                      title="Reset"
+                      class="nm-btn h-8 w-8 flex items-center justify-center rounded-full text-xs font-bold cursor-pointer"
+                    >
+                      <svg
+                        class="h-3 w-3"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2.5"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                    </button>
+                  </div>
+                  <div
+                    id="image-transform-wrapper"
+                    class="origin-center flex items-center justify-center pointer-events-none select-none transition-transform duration-75 ease-out"
+                  >
+                    <img
+                      id="image-viewer-element"
+                      class="max-w-full max-h-full block object-contain"
+                      src=""
+                      alt="Active content"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div
+              id="control-meta-split-column-container"
+              class="space-y-6 overflow-y-auto"
+            >
+              <div class="nm-card p-4 rounded-2xl space-y-3">
+                <div
+                  class="flex justify-between items-center border-b border-gray-200 dark:border-slate-800/40 pb-2"
+                >
+                  <span
+                    class="text-xs font-bold"
+                    style="color: var(--text-primary)"
+                    >Ingestion Pipeline Monitor</span
+                  >
+                  <span
+                    id="pipeline-sync-badge"
+                    class="text-[10px] bg-gray-100 dark:bg-slate-800 px-2 py-0.5 rounded-md font-bold border border-gray-300 dark:border-slate-700/50"
+                    style="color: var(--text-secondary)"
+                    >Idle State</span
+                  >
+                </div>
+                <div
+                  class="grid grid-cols-5 gap-2 text-center text-[10px] font-medium"
+                  id="pipeline-stages"
+                  style="color: var(--text-secondary)"
+                >
+                  <div
+                    class="p-1 rounded bg-gray-100 dark:bg-slate-800/20"
+                    id="stage-upload"
+                  >
+                    Upload
+                  </div>
+                  <div
+                    class="p-1 rounded bg-gray-100 dark:bg-slate-800/20"
+                    id="stage-ocr"
+                  >
+                    OCR
+                  </div>
+                  <div
+                    class="p-1 rounded bg-gray-100 dark:bg-slate-800/20"
+                    id="stage-chunk"
+                  >
+                    Chunk
+                  </div>
+                  <div
+                    class="p-1 rounded bg-gray-100 dark:bg-slate-800/20"
+                    id="stage-embed"
+                  >
+                    Embed
+                  </div>
+                  <div
+                    class="p-1 rounded bg-gray-100 dark:bg-slate-800/20"
+                    id="stage-index"
+                  >
+                    Index
+                  </div>
+                </div>
+              </div>
+
+              <div
+                id="summary-action-card"
+                class="nm-card p-5 rounded-2xl space-y-4 hidden fade-in-layout"
+              >
+                <div
+                  class="flex justify-between items-center border-b border-gray-200 dark:border-slate-800/40 pb-2"
+                >
+                  <span
+                    class="text-[10px] font-bold uppercase"
+                    style="color: var(--text-secondary)"
+                    >Automatic Executive Analysis</span
+                  >
+                  <button
+                    onclick="triggerExecutiveSummary()"
+                    title="Run AI Summarizer"
+                    class="bg-purple-600/20 text-purple-400 border border-purple-500/30 p-2 rounded-lg text-xs font-bold hover:brightness-110 transition cursor-pointer flex items-center justify-center"
+                  >
+                    <svg
+                      class="h-4 w-4"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        d="M9.813 15.904L9 21l-.813-5.096L3.096 15.187 8.192 14.375 9 9.281l.808 5.094 5.096.812-5.091.817zM19.071 4.929a10 10 0 11-14.142 14.142 10 10 0 0114.142-14.142z"
+                      />
+                    </svg>
+                  </button>
+                </div>
+                <div
+                  id="summary-text-block"
+                  class="text-xs leading-relaxed font-light max-h-48 overflow-y-auto pr-1"
+                  style="color: var(--text-secondary)"
+                >
+                  Click the AI Summarizer tool execution key above to parse
+                  context chunks across memory stores.
+                </div>
+              </div>
+            </div>
+          </section>
+        </main>
+
+        <aside
+          style="background-color: var(--bg-secondary)"
+          class="w-96 h-full flex flex-col justify-between p-4 border-l border-gray-200 dark:border-slate-800/30 flex-shrink-0 z-40"
+        >
+          <div
+            class="h-10 border-b border-gray-200 dark:border-slate-800/50 flex items-center justify-between text-xs shrink-0"
+          >
+            <div
+              class="flex items-center gap-2 font-semibold"
+              style="color: var(--text-secondary)"
+            >
+              <span
+                id="chat-pulse-indicator"
+                class="h-2 w-2 rounded-full bg-slate-700"
+              ></span>
+              <span id="chat-engine-status-label">RAG Engine Offline</span>
+            </div>
+            <span
+              class="text-[10px] font-mono bg-gray-100 dark:bg-slate-800 px-2 py-0.5 rounded border border-gray-300 dark:border-indigo-700/40"
+              style="color: var(--text-muted)"
+              >OpenRouter:Auto</span
+            >
+          </div>
+
+          <div
+            id="chat-scroll-frame"
+            class="flex-1 overflow-y-auto py-4 space-y-4 text-xs flex flex-col justify-center"
+          >
+            <div
+              id="chat-empty-state"
+              class="text-center max-w-[200px] mx-auto space-y-2 text-slate-400"
+              style="color: var(--text-secondary)"
+            >
+              <svg
+                class="h-8 w-8 mx-auto stroke-current"
+                fill="none"
+                stroke-width="1.5"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M9 17.25v1.007a3 3 0 01-.879 2.122L7.5 21h9l-.621-.621A3 3 0 0115 18.257V17.25m6-12V15a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 15V5.25A2.25 2.25 0 015.25 3h13.5A2.25 2.25 0 0121 5.25zm-10.5 6a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zm6 0a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z"
+                />
+              </svg>
+              <p class="font-semibold text-xs">Assistant Panel Standby</p>
+              <p class="text-[11px]" style="color: var(--text-muted)">
+                Inbound knowledge stream awaits source initialization mapping
+                indices.
+              </p>
+            </div>
+          </div>
+
+          <div
+            class="pt-3 border-t border-gray-200 dark:border-slate-800/40 bg-transparent flex flex-col gap-2 shrink-0"
+          >
+            <div
+              class="rounded-2xl p-2 flex flex-col border bg-white dark:bg-slate-900/20 shadow-sm"
+            >
+              <textarea
+                id="chat-textarea"
+                placeholder="Upload file to activate querying..."
+                rows="2"
+                class="bg-transparent w-full resize-none text-xs placeholder-slate-500 focus:outline-none p-2"
+                style="color: var(--text-primary)"
+                disabled
+                onkeydown="
+                  if (event.key === 'Enter' && !event.shiftKey) {
+                    event.preventDefault();
+                    executeUserChatQuery();
+                  }
+                "
+              ></textarea>
+              <div
+                class="flex justify-between items-center pt-2 border-t border-gray-200 dark:border-slate-800/30 px-2"
+              >
+                <span
+                  class="text-[10px] font-mono opacity-50"
+                  style="color: var(--text-muted)"
+                  >v2026.rag</span
+                >
+                <button
+                  id="chat-submit-btn"
+                  onclick="executeUserChatQuery()"
+                  title="Submit Query"
+                  class="bg-gradient-to-r from-[#4F46E5] to-[#9333EA] text-white p-2 rounded-xl opacity-40 cursor-not-allowed border-none shadow-md transition flex items-center justify-center"
+                  disabled
+                >
+                  <svg
+                    class="h-4 w-4 transform rotate-45"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.768 0 013.27 20.876L5.999 12zm0 0h7.5"
+                    />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>
+
+    <div
+      id="floating-action-context-menu"
+      style="display: none"
+      class="absolute border w-44 rounded-xl shadow-2xl z-50 py-1 text-xs select-none bg-slate-900 border-slate-800 text-white fade-in-layout"
+      onclick="event.stopPropagation()"
+    >
+      <div
+        onclick="openRenameModalFromMenu(event)"
+        class="px-3.5 py-2.5 hover:bg-slate-800 transition flex items-center gap-2.5 cursor-pointer"
+      >
+        <svg
+          class="h-3.5 w-3.5 text-[#F59E0B]"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.5"
+          viewBox="0 0 24 24"
+        >
+          <path
+            d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125"
+          />
+        </svg>
+        <span>Rename Thread</span>
+      </div>
+      <div
+        onclick="openDeleteModalFromMenu(event)"
+        class="px-3.5 py-2.5 text-[#EF4444] hover:bg-[#EF4444]/10 transition flex items-center gap-2.5 border-t border-slate-800 cursor-pointer"
+      >
+        <svg
+          class="h-3.5 w-3.5"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.5"
+          viewBox="0 0 24 24"
+        >
+          <path
+            d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.1 0 00-7.5 0"
+          />
+        </svg>
+        <span>Delete Session</span>
+      </div>
+    </div>
+
+    <script>
+      let currentTheme = "dark";
+      let activeDocumentId = null;
+      let activeFilename = null;
+      let queryCount = 0;
+      let authMode = "login";
+
+      let activeChatSessionsRegistry = {};
+      let menuSelectedDocumentId = null;
+      let sessionToken = null;
+
+      let imgZoomScale = 1.0;
+      let imgRotationAngle = 0;
+      let isDraggingPan = false;
+      let startX, startY;
+      let imgTranslateX = 0;
+      let imgTranslateY = 0;
+
+      // Production backend URL configuration
+      const backendBaseUrl =
+        "https://multimodal-document-intelligence.onrender.com";
+
+      // 1. FIXED: Unified multi-browser central context selection framework router
+      async function switchActiveChatSessionContext(targetDocId) {
+        if (targetDocId === activeDocumentId) return;
+
+        localStorage.setItem("mdi_last_active_doc_id", targetDocId);
+        preserveActiveSessionContext();
+        activeDocumentId = targetDocId;
+
+        const targetMeta = activeChatSessionsRegistry[targetDocId];
+        activeFilename = targetMeta.rawFilename;
+        queryCount = targetMeta.queryLogsCount;
+
+        document.getElementById("active-filename-view").textContent =
+          targetMeta.filename;
+        activateControlWorkspaceElements();
+      }
+
+      // 2. FIXED: Multi-browser database history context sync loading loop pipeline
+      async function initializePersistentHistoryStorage() {
+        try {
+          const response = await fetch(`${backendBaseUrl}/chats`, {
+            headers: { Authorization: `Bearer ${sessionToken}` },
+          });
+          if (!response.ok) throw new Error();
+          const serverChatsList = await response.json();
+
+          activeChatSessionsRegistry = {};
+          const todayListNode = document.getElementById("today-chats-list");
+          todayListNode.innerHTML = "";
+
+          if (serverChatsList.length > 0) {
+            serverChatsList.forEach((chat) => {
+              activeChatSessionsRegistry[chat.document_id] = {
+                filename: chat.filename,
+                rawFilename: chat.raw_filename,
+                queryLogsCount: chat.query_count,
+                chatWindowHtmlCache: chat.chat_html || "",
+                summaryTextCache:
+                  chat.summary_html ||
+                  "Click the AI Summarizer tool execution key above to parse context chunks across memory stores.",
+              };
+              appendSessionLinkToDOM(chat.document_id, chat.filename);
+            });
+
+            const lastSessionId = localStorage.getItem(
+              "mdi_last_active_doc_id",
+            );
+            if (lastSessionId && activeChatSessionsRegistry[lastSessionId]) {
+              switchActiveChatSessionContext(lastSessionId);
+            } else {
+              switchActiveChatSessionContext(
+                serverChatsList[serverChatsList.length - 1].document_id,
+              );
+            }
+          } else {
+            todayListNode.innerHTML = `<div id="empty-history-label" class="text-[11px] italic pl-2 py-1" style="color: var(--text-muted)">No active conversation logs</div>`;
+          }
+        } catch (e) {
+          console.error(
+            "Central history index sync error fallback context loaded.",
+          );
+        }
+      }
+
+      // 3. FIXED: Pushes chat state dynamically straight to backend storage vectors
+      async function saveStateToLocalStorage() {
+        if (!activeDocumentId) return;
+        const currentMeta = activeChatSessionsRegistry[activeDocumentId];
+        try {
+          await fetch(`${backendBaseUrl}/chats/save`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${sessionToken}`,
+            },
+            body: JSON.stringify({
+              document_id: activeDocumentId,
+              filename: currentMeta.filename,
+              raw_filename: currentMeta.rawFilename,
+              query_count: queryCount,
+              chat_html: currentMeta.chatWindowHtmlCache,
+              summary_html: currentMeta.summaryTextCache,
+            }),
+          });
+        } catch (err) {
+          console.error("Database cloud tracking backup link dropped.");
+        }
+      }
+
+      window.addEventListener("DOMContentLoaded", () => {
+        const savedToken = localStorage.getItem("mdi_jwt_token");
+        const savedUser = localStorage.getItem("mdi_username");
+
+        if (savedToken && savedUser) {
+          sessionToken = savedToken;
+          document.getElementById("app-workspace").classList.remove("hidden");
+          document
+            .getElementById("active-user-display-tag")
+            .classList.remove("hidden");
+          document.getElementById("active-user-display-tag").textContent =
+            `@${savedUser}`;
+          initializePersistentHistoryStorage();
+        } else {
+          // FIXED: Redirect securely back to index.html (the entry point login page)
+          window.location.href = "index.html";
+        }
+      });
+
+      function toggleAuthMode() {
+        const title = document.getElementById("auth-title");
+        const link = document.getElementById("auth-toggle-link");
+        if (authMode === "register") {
+          authMode = "login";
+          title.textContent = "Access Knowledge Gateway";
+          link.textContent = "Need an account? Register credentials";
+        } else {
+          authMode = "register";
+          title.textContent = "Create Knowledge Profile";
+          link.textContent = "Already have credentials? Log in here";
+        }
+      }
+
+      function executePlatformSignout() {
+        localStorage.removeItem("mdi_jwt_token");
+        localStorage.removeItem("mdi_username");
+        localStorage.removeItem("mdi_last_active_doc_id");
+        // FIXED: Route explicitly to index.html on signout
+        window.location.href = "index.html";
+      }
+
+      function toggleGlobalTheme() {
+        const nextMode = currentTheme === "dark" ? "light" : "dark";
+        setDashboardThemeStructure(nextMode);
+      }
+
+      document.addEventListener("keydown", (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+          e.preventDefault();
+          document.getElementById("file-picker").click();
+        }
+      });
+
+      function setDashboardThemeStructure(modeString) {
+        const htmlElement = document.documentElement;
+        const knob = document.getElementById("theme-knob");
+        const iconLabel = document.getElementById("theme-icon-label");
+
+        currentTheme = modeString;
+        localStorage.setItem("mdi_theme_mode", modeString);
+
+        if (modeString === "light") {
+          htmlElement.classList.remove("dark");
+          htmlElement.classList.add("light");
+          knob.classList.add("translate-x-7");
+          iconLabel.textContent = "☀️";
+        } else {
+          htmlElement.classList.remove("light");
+          htmlElement.classList.add("dark");
+          knob.classList.remove("translate-x-7");
+          iconLabel.textContent = "🌙";
+        }
+
+        if (activeFilename) updateViewerTypeBadgeStyles();
+        refreshSidebarNodesHighlighting();
+      }
+
+      function executeActionMenuCommand(cmd) {
+        closeAllActionMenus();
+        alert(`Action [${cmd}] complete.`);
+      }
+
+      function preserveActiveSessionContext() {
+        if (!activeDocumentId || !activeChatSessionsRegistry[activeDocumentId])
+          return;
+        activeChatSessionsRegistry[activeDocumentId].queryLogsCount =
+          queryCount;
+
+        const scrollZone = document.getElementById("chat-scroll-frame");
+        const summaryBlock = document.getElementById("summary-text-block");
+
+        if (scrollZone)
+          activeChatSessionsRegistry[activeDocumentId].chatWindowHtmlCache =
+            scrollZone.innerHTML;
+        if (summaryBlock)
+          activeChatSessionsRegistry[activeDocumentId].summaryTextCache =
+            summaryBlock.innerHTML;
+        saveStateToLocalStorage();
+      }
+
+      function openItemContextMenuOptions(event, targetDocId) {
+        event.preventDefault();
+        event.stopPropagation();
+        menuSelectedDocumentId = targetDocId;
+        const menu = document.getElementById("floating-action-context-menu");
+        menu.style.left = `${event.clientX + 5}px`;
+        menu.style.top = `${event.clientY + 5}px`;
+        menu.style.display = "block";
+      }
+
+      function closeAllActionMenus() {
+        const menu = document.getElementById("floating-action-context-menu");
+        if (menu) menu.style.display = "none";
+      }
+
+      document.body.addEventListener("click", () => {
+        closeAllActionMenus();
+      });
+
+      function openRenameModalFromMenu(event) {
+        event.stopPropagation();
+        closeAllActionMenus();
+        if (
+          !menuSelectedDocumentId ||
+          !activeChatSessionsRegistry[menuSelectedDocumentId]
+        )
+          return;
+
+        const currentLabel =
+          activeChatSessionsRegistry[menuSelectedDocumentId].filename;
+        document.getElementById("modal-input-rename").value = currentLabel;
+        document.getElementById("backdrop-rename-portal").style.display =
+          "flex";
+      }
+
+      function commitThreadRenameFromModal() {
+        const targetDocId = menuSelectedDocumentId;
+        const newName = document
+          .getElementById("modal-input-rename")
+          .value.trim();
+
+        if (newName && targetDocId && activeChatSessionsRegistry[targetDocId]) {
+          activeChatSessionsRegistry[targetDocId].filename = newName;
+
+          const titleSpan = document.querySelector(
+            `#node-${targetDocId} .title-span-label`,
+          );
+          if (titleSpan) titleSpan.textContent = newName;
+
+          if (targetDocId === activeDocumentId) {
+            document.getElementById("active-filename-view").textContent =
+              newName;
+          }
+          saveStateToLocalStorage();
+        }
+        closeRenameModalDialog();
+      }
+
+      function closeRenameModalDialog() {
+        document.getElementById("backdrop-rename-portal").style.display =
+          "none";
+        menuSelectedDocumentId = null;
+      }
+
+      function openDeleteModalFromMenu(event) {
+        event.stopPropagation();
+        closeAllActionMenus();
+        if (!menuSelectedDocumentId) return;
+        document.getElementById("backdrop-delete-portal").style.display =
+          "flex";
+      }
+
+      async function commitSessionPurgeFromDatabase() {
+        const targetDocId = menuSelectedDocumentId;
+        if (!targetDocId) return;
+
+        try {
+          const res = await fetch(
+            `${backendBaseUrl}/chats/delete/${targetDocId}`,
+            {
+              method: "DELETE",
+              headers: { Authorization: `Bearer ${sessionToken}` },
+            },
+          );
+          if (!res.ok) throw new Error();
+
+          const node = document.getElementById(`node-${targetDocId}`);
+          if (node) node.remove();
+
+          delete activeChatSessionsRegistry[targetDocId];
+
+          if (targetDocId === activeDocumentId) {
+            activeDocumentId = null;
+            activeFilename = null;
+            queryCount = 0;
+            localStorage.removeItem("mdi_last_active_doc_id");
+            resetInterfaceToStandbyState();
+          }
+
+          if (Object.keys(activeChatSessionsRegistry).length === 0) {
+            document.getElementById("today-chats-list").innerHTML =
+              `<div id="empty-history-label" class="text-[11px] italic pl-2 py-1" style="color: var(--text-muted)">No active conversation logs</div>`;
+          }
+        } catch (e) {
+          alert("Purge operation refused by central storage endpoints.");
+        }
+        closeDeleteModalDialog();
+      }
+
+      function closeDeleteModalDialog() {
+        document.getElementById("backdrop-delete-portal").style.display =
+          "none";
+        menuSelectedDocumentId = null;
+      }
+
+      async function uploadToBackend() {
+        const fileInput = document.getElementById("file-picker");
+        const badge = document.getElementById("pipeline-sync-badge");
+        if (fileInput.files.length === 0) return;
+
+        let activeTokenValue =
+          sessionToken || localStorage.getItem("mdi_jwt_token");
+        const file = fileInput.files[0];
+        document.getElementById("active-filename-view").textContent = file.name;
+        resetPipelineDisplay();
+
+        badge.className =
+          "text-[10px] px-2 py-0.5 rounded-md font-bold bg-[#ECFDF3] text-[#166534] border border-[#D1FADF]";
+        badge.textContent = "Processing Ingestion...";
+        document.getElementById("stage-upload").className =
+          "p-1 rounded font-bold animate-pulse text-[#4F46E5]";
+
+        const formData = new FormData();
+        formData.append("file", file);
+
+        try {
+          const response = await fetch(`${backendBaseUrl}/upload`, {
+            method: "POST",
+            headers: { Authorization: `Bearer ${activeTokenValue}` },
+            body: formData,
+          });
+          if (!response.ok) throw new Error();
+
+          const data = await response.json();
+          if (activeDocumentId) preserveActiveSessionContext();
+
+          activeDocumentId = data.document_id;
+          activeFilename = data.filename;
+          queryCount = 0;
+
+          activeChatSessionsRegistry[activeDocumentId] = {
+            filename: file.name,
+            rawFilename: activeFilename,
+            queryLogsCount: 0,
+            chatWindowHtmlCache: "",
+            summaryTextCache:
+              "Click the AI Summarizer tool execution key above to parse context chunks across memory stores.",
+          };
+          saveStateToLocalStorage();
+          document.getElementById("stage-upload").className =
+            "p-1 rounded font-bold text-[#22C55E]";
+          document.getElementById("stage-ocr").className =
+            "p-1 rounded font-bold animate-pulse text-[#4F46E5]";
+          pollBackgroundPipelineWorker();
+        } catch (err) {
+          badge.className =
+            "text-[10px] px-2 py-0.5 rounded-md font-bold bg-rose-500/10 text-rose-400 border border-rose-500/20";
+          badge.textContent = "Ingestion Error";
+        }
+      }
+
+      function pollBackgroundPipelineWorker() {
+        const badge = document.getElementById("pipeline-sync-badge");
+        const stages = ["upload", "ocr", "chunk", "embed", "index"];
+
+        const taskInterval = setInterval(async () => {
+          try {
+            const res = await fetch(
+              `${backendBaseUrl}/status/${activeDocumentId}`,
+              {
+                headers: { Authorization: `Bearer ${sessionToken}` },
+              },
+            );
+            const data = await res.json();
+            if (data.status === "processing") {
+              document.getElementById("stage-ocr").className =
+                "p-1 rounded font-bold text-[#22C55E]";
+              document.getElementById("stage-chunk").className =
+                "p-1 rounded font-bold text-[#22C55E]";
+              document.getElementById("stage-embed").className =
+                "p-1 rounded font-bold animate-pulse text-[#4F46E5]";
+            } else if (data.status === "completed") {
+              clearInterval(taskInterval);
+              stages.forEach((s) => {
+                const nodeElement = document.getElementById(`stage-${s}`);
+                if (nodeElement)
+                  nodeElement.className =
+                    "p-1 rounded font-bold text-[#22C55E]";
+              });
+              badge.className =
+                "text-[10px] px-2 py-0.5 rounded-md font-bold bg-[#ECFDF3] text-[#166534] border border-[#D1FADF]";
+              badge.textContent = "Index Connected";
+              const label = document.getElementById("empty-history-label");
+              if (label) label.remove();
+              appendSessionLinkToDOM(
+                activeDocumentId,
+                activeChatSessionsRegistry[activeDocumentId].filename,
+              );
+              activateControlWorkspaceElements();
+            } else if (data.status === "failed") {
+              clearInterval(taskInterval);
+              badge.textContent = "Pipeline Failed";
+            }
+          } catch (err) {
+            clearInterval(taskInterval);
+          }
+        }, 1200);
+      }
+
+      function updateViewerTypeBadgeStyles() {
+        const typeBadge = document.getElementById("viewer-type-badge");
+        const fileExt = activeFilename.split(".").pop().toLowerCase();
+        const isImg = ["jpg", "jpeg", "png"].includes(fileExt);
+
+        if (isImg) {
+          typeBadge.textContent = "IMAGE PANEL";
+          typeBadge.className =
+            currentTheme === "light"
+              ? "bg-purple-100 text-purple-800 border border-purple-200 font-bold text-[10px] px-1.5 py-0.5 rounded shadow-sm"
+              : "bg-purple-500/10 text-purple-400 border border-purple-500/20 font-bold text-[10px] px-1.5 py-0.5 rounded";
+        } else {
+          typeBadge.textContent = "NATIVE PDF";
+          typeBadge.className =
+            currentTheme === "light"
+              ? "bg-red-100 text-red-800 border border-red-200 font-bold text-[10px] px-1.5 py-0.5 rounded shadow-sm"
+              : "bg-red-500/10 text-red-400 border border-red-500/20 font-bold text-[10px] px-1.5 py-0.5 rounded";
+        }
+      }
+
+      function activateControlWorkspaceElements() {
+        document.getElementById("pdf-view-placeholder").classList.add("hidden");
+        const viewerFrame = document.getElementById("pdf-viewer");
+        const imageViewerBox = document.getElementById(
+          "image-viewer-container",
+        );
+        const imageElement = document.getElementById("image-viewer-element");
+
+        const fileExt = activeFilename.split(".").pop().toLowerCase();
+        const isImg = ["jpg", "jpeg", "png"].includes(fileExt);
+
+        if (isImg) {
+          viewerFrame.classList.add("hidden");
+          imageViewerBox.classList.remove("hidden");
+          imageElement.src = `${backendBaseUrl}/pdfs/${activeFilename}`;
+          resetImageTransformation();
+        } else {
+          imageViewerBox.classList.add("hidden");
+          viewerFrame.classList.remove("hidden");
+          viewerFrame.src = `${backendBaseUrl}/pdfs/${activeFilename}#toolbar=1&navpanes=0&view=FitH`;
+        }
+
+        updateViewerTypeBadgeStyles();
+
+        document
+          .getElementById("summary-action-card")
+          .classList.remove("hidden");
+        const sessionData = activeChatSessionsRegistry[activeDocumentId];
+        document.getElementById("summary-text-block").innerHTML =
+          sessionData.summaryTextCache;
+        document.getElementById("stat-chunks").textContent = isImg ? "1" : "54";
+        document.getElementById("stat-doc-id").textContent = activeDocumentId;
+        document.getElementById("stat-queries").textContent = queryCount;
+
+        document.getElementById("chat-pulse-indicator").className =
+          "h-2 w-2 rounded-full bg-[#22C55E] animate-ping";
+        document.getElementById("chat-engine-status-label").textContent =
+          "RAG Engine Active";
+        const scrollFrame = document.getElementById("chat-scroll-frame");
+        scrollFrame.classList.remove("justify-center");
+
+        scrollFrame.innerHTML =
+          sessionData.chatWindowHtmlCache === ""
+            ? `<div class="bg-indigo-50/10 border border-slate-500/10 rounded-xl p-3 text-center fade-in-layout">System workspace online. Search document vector contents below.</div>`
+            : sessionData.chatWindowHtmlCache;
+
+        document.getElementById("chat-textarea").removeAttribute("disabled");
+        document.getElementById("chat-textarea").placeholder =
+          "Ask anything about this document structure...";
+        document.getElementById("chat-submit-btn").removeAttribute("disabled");
+        document.getElementById("chat-submit-btn").className =
+          "bg-gradient-to-r from-[#4F46E5] to-[#9333EA] text-white p-2 rounded-xl opacity-40 cursor-pointer hover:brightness-105 transition border-none shadow-md flex items-center justify-center";
+
+        refreshSidebarNodesHighlighting();
+      }
+
+      function applyImageTransformations() {
+        const wrapper = document.getElementById("image-transform-wrapper");
+        wrapper.style.transform = `translate(${imgTranslateX}px, ${imgTranslateY}px) scale(${imgZoomScale}) rotate(${imgRotationAngle}deg)`;
+      }
+      function adjustImageZoom(amount) {
+        imgZoomScale = Math.max(0.4, Math.min(4.0, imgZoomScale + amount));
+        applyImageTransformations();
+      }
+      function rotateImage() {
+        imgRotationAngle = (imgRotationAngle + 90) % 360;
+        applyImageTransformations();
+      }
+      function resetImageTransformation() {
+        imgZoomScale = 1.0;
+        imgRotationAngle = 0;
+        imgTranslateX = 0;
+        imgTranslateY = 0;
+        applyImageTransformations();
+      }
+      function startImagePanDrag(e) {
+        isDraggingPan = true;
+        startX = e.clientX - imgTranslateX;
+        startY = e.clientY - imgTranslateY;
+        document.onmousemove = executeImagePanDrag;
+        document.onmouseup = stopImagePanDrag;
+      }
+      function executeImagePanDrag(e) {
+        if (!isDraggingPan) return;
+        e.preventDefault();
+        imgTranslateX = e.clientX - startX;
+        imgTranslateY = e.clientY - startY;
+        applyImageTransformations();
+      }
+      function stopImagePanDrag() {
+        isDraggingPan = false;
+        document.onmousemove = null;
+        document.onmouseup = null;
+      }
+
+      async function executeUserChatQuery() {
+        const textarea = document.getElementById("chat-textarea");
+        const scrollFrame = document.getElementById("chat-scroll-frame");
+        const queryText = textarea.value.trim();
+
+        if (!queryText || !activeDocumentId) return;
+
+        scrollFrame.innerHTML += `<div class="flex justify-end w-full fade-in-layout"><div class="text-white bg-gradient-to-r from-[#4F46E5] to-[#9333EA] rounded-2xl px-4 py-2.5 max-w-[85%] font-medium shadow-sm">${queryText}</div></div>`;
+        textarea.value = "";
+        scrollFrame.scrollTop = scrollFrame.scrollHeight;
+        queryCount++;
+        document.getElementById("stat-queries").textContent = queryCount;
+
+        const loaderId = "loader-" + Date.now();
+        scrollFrame.innerHTML += `<div class="flex justify-start w-full fade-in-layout" id="${loaderId}"><div class="bg-[var(--chat-ai-bg)] border border-[var(--border-glow)] rounded-2xl px-4 py-2.5 text-[11px] flex items-center gap-2 font-mono" style="color: var(--text-primary);"><svg class="animate-spin h-3 w-3" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>Cloud Router analyzing context...</div></div>`;
+        scrollFrame.scrollTop = scrollFrame.scrollHeight;
+        const startTime = Date.now();
+
+        let activeTokenValue =
+          sessionToken || localStorage.getItem("mdi_jwt_token");
+
+        try {
+          // FIXED: Added forward slash before the 'ask' endpoint path string
+          const response = await fetch(`${backendBaseUrl}/ask`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${activeTokenValue}`,
+            },
+            body: JSON.stringify({
+              question: queryText,
+              document_id: activeDocumentId,
+            }),
+          });
+          const data = await response.json();
+          document.getElementById(loaderId).remove();
+          document.getElementById("stat-speed").textContent =
+            `${Date.now() - startTime}ms`;
+
+          let sourceButtons = "";
+
+          const isMissing =
+            data.answer.toLowerCase().includes("fields are missing") ||
+            data.answer.toLowerCase().includes("does not contain information");
+
+          if (
+            !isMissing &&
+            activeFilename.split(".").pop().toLowerCase() === "pdf" &&
+            data.sources &&
+            data.sources.length > 0
+          ) {
+            sourceButtons = `
+            <div class="mt-3 pt-2.5 border-t border-slate-200/10 flex flex-col gap-1.5">
+              <div class="flex flex-wrap gap-2">
+                ${data.sources
+                  .map(
+                    (s) => `
+                  <button onclick="jumpToPdfPageHash(${s.page})" title="Jump to Page ${s.page}" class="inline-flex items-center gap-1.5 bg-white text-indigo-600 font-bold px-4 py-1.5 rounded-full text-[11px] border border-slate-200 hover:bg-slate-50 transition cursor-pointer shadow-sm">
+                    <svg class="h-3 w-3 text-[#E11D48] fill-current" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13_c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+                    <span>Jump to Page ${s.page}</span>
+                  </button>
+                `,
+                  )
+                  .join("")}
+              </div>
+            </div>`;
+          }
+
+          scrollFrame.innerHTML += `<div class="flex justify-start w-full flex-col space-y-2 fade-in-layout"><div class="ai-msg-bubble border p-4 max-w-[95%] shadow-sm relative rounded-2xl" style="background-color: var(--chat-ai-bg); border-color: var(--border-glow); color: var(--text-primary);"><p class="leading-relaxed font-normal">${data.answer}</p>${sourceButtons}</div></div>`;
+        } catch (err) {
+          if (document.getElementById(loaderId))
+            document.getElementById(loaderId).remove();
+        }
+        scrollFrame.scrollTop = scrollFrame.scrollHeight;
+        preserveActiveSessionContext();
+      }
+
+      function jumpToPdfPageHash(pageNum) {
+        const viewer = document.getElementById("pdf-viewer");
+        viewer.src = `${backendBaseUrl}/pdfs/${activeFilename}?t=${Date.now()}#page=${pageNum}&toolbar=1&navpanes=0&view=FitH`;
+      }
+
+      async function triggerExecutiveSummary() {
+        const block = document.getElementById("summary-text-block");
+        let activeTokenValue =
+          sessionToken || localStorage.getItem("mdi_jwt_token");
+        if (!activeDocumentId) return;
+
+        block.innerHTML = "Generating summary maps via local LLM engine...";
+        try {
+          const response = await fetch(
+            `${backendBaseUrl}/summarize/${activeDocumentId}`,
+            {
+              method: "POST",
+              headers: { Authorization: `Bearer ${activeTokenValue}` },
+            },
+          );
+          const data = await response.json();
+          block.innerHTML = `<p class="whitespace-pre-line font-light">${data.summary}</p>`;
+          preserveActiveSessionContext();
+        } catch (err) {
+          block.innerHTML = "Failed to fetch executive summary vectors.";
+        }
+      }
+
+      function resetInterfaceToStandbyState() {
+        document
+          .getElementById("pdf-view-placeholder")
+          .classList.remove("hidden");
+        document.getElementById("pdf-viewer").classList.add("hidden");
+        document.getElementById("pdf-viewer").src = "";
+        document
+          .getElementById("image-viewer-container")
+          .classList.add("hidden");
+        document.getElementById("image-viewer-element").src = "";
+
+        document.getElementById("summary-action-card").classList.add("hidden");
+        document.getElementById("stat-chunks").textContent = "0";
+        document.getElementById("stat-queries").textContent = "0";
+        document.getElementById("stat-speed").textContent = "0ms";
+        document.getElementById("stat-doc-id").textContent = "None Loaded";
+        document.getElementById("active-filename-view").textContent =
+          "No Active Source Asset";
+        document.getElementById("chat-pulse-indicator").className =
+          "h-2 w-2 rounded-full bg-slate-400";
+        document.getElementById("chat-engine-status-label").textContent =
+          "RAG Engine Offline";
+        document
+          .getElementById("chat-scroll-frame")
+          .classList.add("justify-center");
+        document.getElementById("chat-scroll-frame").innerHTML = `
+          <div id="chat-empty-state" class="text-center max-w-[200px] mx-auto space-y-2 text-slate-400" style="color: var(--text-secondary)">
+            <svg class="h-8 w-8 mx-auto stroke-current" fill="none" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17.25v1.007a3 3 0 01-.879 2.122L7.5 21h9l-.621-.621A3 3 0 0115 18.257V17.25m6-12V15a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 15V5.25A2.25 2.25 0 015.25 3h13.5A2.25 2.25 0 0121 5.25zm-10.5 6a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zm6 0a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" /></svg>
+            <p class="font-semibold text-xs">Assistant Panel Standby</p>
+            <p class="text-[11px]" style="color: var(--text-muted)">Inbound knowledge stream awaits source initialization mapping indices.</p>
+          </div>`;
+        document
+          .getElementById("chat-textarea")
+          .setAttribute("disabled", "true");
+        document
+          .getElementById("chat-submit-btn")
+          .setAttribute("disabled", "true");
+        document.getElementById("chat-submit-btn").className =
+          "bg-gradient-to-r from-[#4F46E5] to-[#9333EA] text-white p-2 rounded-xl opacity-40 cursor-not-allowed border-none shadow-md transition flex items-center justify-center";
+        resetPipelineDisplay();
+      }
+
+      function refreshSidebarNodesHighlighting() {
+        document.querySelectorAll(".history-session-node").forEach((n) => {
+          n.style.backgroundColor = "transparent";
+          n.style.borderColor = "transparent";
+          const label = n.querySelector(".title-span-label");
+          if (label) label.style.color = "var(--text-secondary)";
+        });
+        const activeNode = document.getElementById(`node-${activeDocumentId}`);
+        if (activeNode) {
+          activeNode.style.backgroundColor = "var(--history-active)";
+          activeNode.style.borderColor = "var(--history-border)";
+          const activeLabel = activeNode.querySelector(".title-span-label");
+          if (activeLabel) activeLabel.style.color = "var(--history-text)";
+        }
+      }
+
+      function appendSessionLinkToDOM(docId, nameString) {
+        const todayList = document.getElementById("today-chats-list");
+        if (document.getElementById(`node-${docId}`)) return;
+        const itemHtml = `
+                <div onclick="switchActiveChatSessionContext('${docId}')" oncontextmenu="openItemContextMenuOptions(event, '${docId}')" id="node-${docId}" class="history-session-node group flex items-center justify-between px-3 py-2 text-[11px] font-medium rounded-xl cursor-pointer transition border relative">
+                    <div class="flex items-center gap-2.5 truncate flex-1">
+                      <svg class="h-3.5 w-3.5 text-slate-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 01.865-.501 48.172 48.11 0 003.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z"/></svg>
+                      <span class="truncate title-span-label ml-1" style="color: var(--text-secondary);">${nameString}</span>
+                    </div>
+                    <button onclick="openItemContextMenuOptions(event, '${docId}')" class="hidden group-hover:flex text-slate-400 px-1 border-none bg-transparent cursor-pointer font-bold">...</button>
+                </div>
+            `;
+        todayList.insertAdjacentHTML("afterbegin", itemHtml);
+        refreshSidebarNodesHighlighting();
+      }
+
+      function resetPipelineDisplay() {
+        ["upload", "ocr", "chunk", "embed", "index"].forEach((s) => {
+          const stageNode = document.getElementById(`stage-${s}`);
+          if (stageNode) stageNode.className = "p-1 rounded bg-slate-500/10";
+        });
+      }
+    </script>
+  </body>
+</html>
