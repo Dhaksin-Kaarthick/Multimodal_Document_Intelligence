@@ -1157,8 +1157,11 @@
         try {
           const response = await fetch(`${backendBaseUrl}/upload`, {
             method: "POST",
-            headers: { Authorization: `Bearer ${activeTokenValue}` },
-            body: formData,
+            headers: {
+              // Only include the security authorization token!
+              Authorization: `Bearer ${activeTokenValue}`,
+            },
+            body: formData, // The browser handles content-type generation natively here
           });
           if (!response.ok) throw new Error();
 

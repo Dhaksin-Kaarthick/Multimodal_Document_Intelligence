@@ -169,16 +169,19 @@ async def root_health_check():
         "datetime": datetime.datetime.now().isoformat()
     }
 
+# Locate this block inside Backend/app.py
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://localhost:5500",                  # For local testing
-        # Replace with your actual Vercel live domain link!
-        "https://multimodal-document-intelligence-44a1-3fadyfult.vercel.app/login"
+        # Your exact Vercel domain link
+        "https://multimodal-document-intelligence-44.vercel.app/",
+        # Local environment fallback
+        "http://localhost:5500"
     ],
     allow_credentials=True,
+    # Ensures POST, OPTIONS, GET, DELETE are fully allowed
     allow_methods=["*"],
-    allow_headers=["*"],
+    allow_headers=["*"],  # Ensures Authorization and Content-Type pass cleanly
 )
 
 app.mount("/pdfs", StaticFiles(directory=UPLOAD_DIR), name="pdfs")
