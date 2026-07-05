@@ -1,5 +1,4 @@
-from langchain_text_splitters import RecursiveCharacterTextSplitter
-
+# Make sure the old 'from langchain_text_splitters import ...' line is completely GONE from this file!
 
 def chunk_document_pages(parsed_pages: list, chunk_size: int = 1000, chunk_overlap: int = 200) -> list:
     """
@@ -36,3 +35,4 @@ def chunk_document_pages(parsed_pages: list, chunk_size: int = 1000, chunk_overl
             start_index += (chunk_size - chunk_overlap)
 
     return final_chunks
+    
