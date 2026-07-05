@@ -667,6 +667,10 @@
     </div>
 
     <script>
+      // FIXED: Added global production URL link targeting variables
+      const backendBaseUrl =
+        "https://multimodal-document-intelligence.onrender.com";
+
       function switchViewPortalPanel(targetPanel) {
         const login = document.getElementById("sign-in-panel");
         const register = document.getElementById("register-panel");
@@ -679,7 +683,6 @@
         }
       }
 
-      // --- NEW: PASSWORD FIELD EYE TOGGLE VISIBILITY CONTROLLER ---
       function togglePasswordVisibility(targetFieldId, buttonElement) {
         const field = document.getElementById(targetFieldId);
         if (!field) return;
@@ -715,12 +718,14 @@
         if (emailInput === "admin" && passwordInput === "password123") {
           localStorage.setItem("mdi_jwt_token", "mock-dev-token-string");
           localStorage.setItem("mdi_username", "admin");
-          window.location.href = "index.html";
+          // FIXED: Route explicitly to dashboard.html workspace
+          window.location.href = "dashboard.html";
           return;
         }
 
         try {
-          const response = await fetch("http://127.0.0.1:8000/auth/login", {
+          // FIXED: Swapped hardcoded localhost endpoint string for the production cloud variable path mapping
+          const response = await fetch(`${backendBaseUrl}/auth/login`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -734,7 +739,8 @@
 
           localStorage.setItem("mdi_jwt_token", data.token);
           localStorage.setItem("mdi_username", data.username);
-          window.location.href = "index.html";
+          // FIXED: Route explicitly to dashboard.html workspace
+          window.location.href = "dashboard.html";
         } catch (err) {
           alert(err.message);
         }
@@ -753,7 +759,8 @@
         if (pass !== confirmPass) return alert("Passwords do not match.");
 
         try {
-          const response = await fetch("http://127.0.0.1:8000/auth/register", {
+          // FIXED: Swapped hardcoded localhost endpoint string for the production cloud variable path mapping
+          const response = await fetch(`${backendBaseUrl}/auth/register`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ username: email, password: pass }),
