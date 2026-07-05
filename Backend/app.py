@@ -171,7 +171,11 @@ async def root_health_check():
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "http://localhost:5500",                  # For local testing
+        # Replace with your actual Vercel live domain link!
+        "https://multimodal-document-intelligence-44a1-3fadyfult.vercel.app/login"
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
