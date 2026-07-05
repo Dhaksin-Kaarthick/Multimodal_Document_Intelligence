@@ -294,6 +294,7 @@ async def heavy_rag_ingestion_pipeline(file_path: str, file_extension: str, docu
 # --- OPERATIONAL ROUTE INDICES ---
 
 
+# Look for your @app.post("/upload") route inside Backend/app.py and update it to this streaming approach:
 @app.post("/upload")
 async def upload_file(file: UploadFile = File(...), background_tasks: BackgroundTasks = BackgroundTasks(), user_id: str = Depends(get_current_user_id)):
     file_extension = os.path.splitext(file.filename)[1].lower()
@@ -301,25 +302,32 @@ async def upload_file(file: UploadFile = File(...), background_tasks: Background
     if file_extension not in allowed_extensions:
         raise HTTPException(
             status_code=400, detail="Unsupported upload file system signature.")
+
     document_id = str(uuid.uuid4())
     saved_filename = f"{document_id}{file_extension}"
     file_path = os.path.join(UPLOAD_DIR, saved_filename)
+
     try:
-        content = await file.read()
-        with open(file_path, "wb") as f:
-            f.write(content)
+        # ✅ FIXED: Stream the file directly to storage in 1MB chunks to use 0MB of server RAM
+        with open(file_path, "wb") as buffer:
+            while chunk := await file.read(1024 * 1024):  # Read 1MB at a time
+                buffer.write(chunk)
+
+        # Trigger the background pipeline processor using the saved disk path
         background_tasks.add_task(
             heavy_rag_ingestion_pipeline,
             file_path=file_path,
             file_extension=file_extension,
             document_id=document_id,
             user_id=user_id,
-            file_content=content if file_extension in [
-                '.jpg', '.jpeg', '.png'] else None
+            file_content=None  # Let the background pipeline read from disk safely
         )
     except Exception as e:
+        if os.path.exists(file_path):
+            os.remove(file_path)
         raise HTTPException(
             status_code=500, detail=f"Failed to record file content: {str(e)}")
+
     return {"document_id": document_id, "filename": saved_filename, "status": "processing_started"}
 
 
