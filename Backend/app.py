@@ -13,7 +13,7 @@ from typing import Optional, List, Dict
 from qdrant_client import QdrantClient
 from qdrant_client.http import models
 
-# --- SQLALCHEMY LOCAL PERSISTENCE SYSTEM ---
+# --- SQLALCHEMY PRODUCTION PERSISTENCE SYSTEM ---
 from sqlalchemy import create_engine, Column, String
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
@@ -21,7 +21,6 @@ from sqlalchemy.orm import sessionmaker
 # Import local pipeline modules
 from services.vector_store import initialize_vector_db, upsert_chunks_to_db, search_filtered_chunks
 from services.chunker import chunk_document_pages
-# Changed to handle cloud API
 from services.embedder import generate_embeddings_for_chunks
 from services.vision_processor import process_pdf_images, process_standalone_image
 from services.pdf_parser import extract_text_from_pdf
@@ -38,11 +37,22 @@ if not os.path.exists(UPLOAD_DIR):
 # --- GLOBAL DATABASES MATRIX ---
 global_chats_db: Dict[str, List[dict]] = {}
 
-DATABASE_URL = "sqlite:///./data/users.db"
-if not os.path.exists("data"):
-    os.makedirs("data")
+# --- FIXED MISMATCH: Dynamic PostgreSQL / SQLite Routing ---
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./data/users.db")
 
-engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+if DATABASE_URL.startswith("postgresql"):
+    # Clear out SQLite connection arguments to prevent database crashes
+    engine = create_engine(
+        DATABASE_URL,
+        pool_pre_ping=True,
+        pool_recycle=300
+    )
+else:
+    if not os.path.exists("data"):
+        os.makedirs("data")
+    engine = create_engine(DATABASE_URL, connect_args={
+                           "check_same_thread": False})
+
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
@@ -252,7 +262,6 @@ async def heavy_rag_ingestion_pipeline(file_path: str, file_extension: str, docu
 
         if combined_context:
             document_chunks = chunk_document_pages(combined_context)
-            # FIXED: Added await here because our updated embedder function uses async network calls
             embedded_chunks = await generate_embeddings_for_chunks(document_chunks)
             for chunk in embedded_chunks:
                 chunk["user_id"] = user_id
