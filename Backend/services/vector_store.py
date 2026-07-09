@@ -3,7 +3,7 @@ import uuid
 from qdrant_client import QdrantClient
 from qdrant_client.models import PointStruct, VectorParams, Distance, Filter, FieldCondition, MatchValue
 
-COLLECTION_NAME = "knowledge_base"
+COLLECTION_NAME = "knowledge_base_v2"
 
 
 def initialize_vector_db(client: QdrantClient):
@@ -14,9 +14,11 @@ def initialize_vector_db(client: QdrantClient):
     if not exists:
         client.create_collection(
             collection_name=COLLECTION_NAME,
-            vectors_config=VectorParams(size=384, distance=Distance.COSINE)
+            # 🔥 FIXED: Changed size dimension threshold from 384 to 1024 to support bge-m3 models
+            vectors_config=VectorParams(size=1024, distance=Distance.COSINE)
         )
-        print(f"-> Created new Qdrant Collection '{COLLECTION_NAME}'.")
+        print(
+            f"-> Created new Qdrant Collection '{COLLECTION_NAME}' with 1024 dimensions.")
     else:
         print(f"-> Qdrant Collection '{COLLECTION_NAME}' already initialized.")
 

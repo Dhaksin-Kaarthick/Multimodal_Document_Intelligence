@@ -11,10 +11,12 @@ services:
     volumes:
       - ./Backend/uploads:/app/uploads
       - backend_data_vol:/app/data
+    env_file:
+      - .env
     environment:
       - PYTHONUNBUFFERED=1
       - OLLAMA_HOST=http://host.docker.internal:11434
-      # ADD THIS LINE: Pass the hidden host key securely into the Docker backend container env
+      # FORCE DOCKER COMPOSE TO PASS IT EXPLICITLY INTO CONTAINER MEMORY SPACE
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY} 
     extra_hosts:
       - "host.docker.internal:host-gateway"
@@ -27,7 +29,6 @@ services:
       - "3000:80"
     volumes:
       - ./Frontend:/usr/share/nginx/html
-    command: /bin/sh -c "sed -i 's/index  index.html index.htm;/index  login.html index.html;/' /etc/nginx/conf.d/default.conf && exec nginx -g 'daemon off;'"
     restart: unless-stopped
 
 volumes:
